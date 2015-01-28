@@ -48,7 +48,7 @@
 #define SDPOWER            -1   // Not Used      
 #define SDSS               53   // SS
 #define LED_PIN            13   // Debug LED
-#define BEEPER             61   // Speaker (A7)
+#define BEEPER             42   // Speaker (A7)
 #define SDCARDDETECT       56	  // Megatronics does not use this port, External SD-Adapter
 
 // Fan
