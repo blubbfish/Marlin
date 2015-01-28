@@ -61,8 +61,8 @@
 
 // Extruder Heater
 #define HEATER_0_PIN        2   // Extruder 1
-#define HEATER_1_PIN        8   // Extruder 2
-#define HEATER_2_PIN        9   // Extruder 3
+#define HEATER_1_PIN        9   // Extruder 2
+#define HEATER_2_PIN        8   // Extruder 3
 
 // Bed Heater
 #define HEATER_BED_PIN     10   // Heated Bed
