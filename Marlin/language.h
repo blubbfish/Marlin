@@ -51,6 +51,9 @@
 #elif MB(SAV_MKI)
   #define MACHINE_NAME "SAV MkI"
   #define FIRMWARE_URL "https://github.com/fmalpartida/Marlin/tree/SAV-MkI-config"
+#elif MB(WITBOX)
+  #define MACHINE_NAME "WITBOX"
+  #define FIRMWARE_URL "https://github.com/MarlinFirmware/Marlin"
 #else
   #ifdef CUSTOM_MENDEL_NAME
     #define MACHINE_NAME CUSTOM_MENDEL_NAME
@@ -154,6 +157,8 @@
 #define MSG_BABYSTEPPING_Y                  "Babystepping Y"
 #define MSG_BABYSTEPPING_Z                  "Babystepping Z"
 #define MSG_SERIAL_ERROR_MENU_STRUCTURE     "Error in menu structure"
+
+#define MSG_ERR_EEPROM_WRITE                "Error writing to EEPROM!"
 
 // LCD Menu Messages
 
