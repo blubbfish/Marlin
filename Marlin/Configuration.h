@@ -228,23 +228,18 @@
 This is a feature to protect your printer from burn up in flames if it has
 a thermistor coming off place (this happened to a friend of mine recently and
 motivated me writing this feature).
-
 The issue: If a thermistor come off, it will read a lower temperature than actual.
 The system will turn the heater on forever, burning up the filament and anything
 else around.
-
 After the temperature reaches the target for the first time, this feature will 
 start measuring for how long the current temperature stays below the target 
 minus _HYSTERESIS (set_temperature - THERMAL_RUNAWAY_PROTECTION_HYSTERESIS).
-
 If it stays longer than _PERIOD, it means the thermistor temperature
 cannot catch up with the target, so something *may be* wrong. Then, to be on the
 safe side, the system will he halt.
-
 Bear in mind the count down will just start AFTER the first time the 
 thermistor temperature is over the target, so you will have no problem if
 your extruder heater takes 2 minutes to hit the target on heating.
-
 */
 // If you want to enable this feature for all your extruder heaters,
 // uncomment the 2 defines below:
@@ -533,26 +528,13 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 #define ABS_PREHEAT_FAN_SPEED 0   // Insert Value between 0 and 255
 
 //LCD and SD support
-<<<<<<< HEAD
 
 // Character based displays can have different extended charsets. If you see strange or missing characters on yours - try an other definition below.
-#define DISPLAY_CHARSET_HD44870_JAPAN  //  "ääööüüß°"
+//#define DISPLAY_CHARSET_HD44870_JAPAN  //  "ääööüüß°"
 //#define DISPLAY_CHARSET_HD44870_WESTERN // with better support for European languages. "ÄäÖöÜüß°"
-//#define DISPLAY_CHARSET_DOGM // for full graphics display "ÄäÖÖÜÜß°"
+#define DISPLAY_CHARSET_DOGM // for full graphics display "ÄäÖÖÜÜß°"
 
-=======
-<<<<<<< HEAD
->>>>>>> MarlinFirmware-Development
 #define ULTRA_LCD  //general LCD support, also 16x2
-=======
-
-// Character based displays can have different extended charsets. If you see strange or missing characters on yours - try an other definition below.
-#define DISPLAY_CHARSET_HD44870_JAPAN  //  "ääööüüß°"
-//#define DISPLAY_CHARSET_HD44870_WESTERN // with better support for European languages. "ÄäÖöÜüß°"
-//#define DISPLAY_CHARSET_DOGM // for full graphics display "ÄäÖÖÜÜß°"
-
-//#define ULTRA_LCD  //general LCD support, also 16x2
->>>>>>> 5fd5105d44123185d9e04bf1dc61de42f3199191
 //#define DOGLCD  // Support for SPI LCD 128x64 (Controller ST7565R graphic Display Family)
 #define SDSUPPORT // Enable SD Card Support in Hardware Console
 //#define SDSLOW // Use slower SD transfer mode (not normally needed - uncomment if you're getting volume init error)
