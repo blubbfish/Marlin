@@ -385,6 +385,8 @@ static int serial_count = 0;
 static boolean comment_mode = false;
 static char *strchr_pointer; ///< A pointer to find chars in the command string (X, Y, Z, E, etc.)
 
+const char* queued_commands_P= NULL; /* pointer to the current line in the active sequence of commands, or NULL when none */
+
 const int sensitive_pins[] = SENSITIVE_PINS; ///< Sensitive pin list for M42
 
 // Inactivity shutdown
@@ -448,38 +450,63 @@ void serial_echopair_P(const char *s_P, unsigned long v)
   }
 #endif //!SDSUPPORT
 
-//adds an command to the main command buffer
-//thats really done in a non-safe way.
-//needs overworking someday
-void enquecommand(const char *cmd)
+//Injects the next command from the pending sequence of commands, when possible
+//Return false if and only if no command was pending
+static bool drain_queued_commands_P()
 {
-  if(buflen < BUFSIZE)
+  char cmd[30];
+  if(!queued_commands_P)
+    return false;
+  // Get the next 30 chars from the sequence of gcodes to run
+  strncpy_P(cmd, queued_commands_P, sizeof(cmd)-1);
+  cmd[sizeof(cmd)-1]= 0;
+  // Look for the end of line, or the end of sequence
+  size_t i= 0;
+  char c;
+  while( (c= cmd[i]) && c!='\n' )
+    ++i; // look for the end of this gcode command
+  cmd[i]= 0;
+  if(enquecommand(cmd)) // buffer was not full (else we will retry later)
   {
-    //this is dangerous if a mixing of serial and this happens
-    strcpy(&(cmdbuffer[bufindw][0]),cmd);
-    SERIAL_ECHO_START;
-    SERIAL_ECHOPGM(MSG_Enqueing);
-    SERIAL_ECHO(cmdbuffer[bufindw]);
-    SERIAL_ECHOLNPGM("\"");
-    bufindw= (bufindw + 1)%BUFSIZE;
-    buflen += 1;
+    if(c)
+      queued_commands_P+= i+1; // move to next command
+    else
+      queued_commands_P= NULL; // will have no more commands in the sequence
   }
+  return true;
 }
 
-void enquecommand_P(const char *cmd)
+//Record one or many commands to run from program memory.
+//Aborts the current queue, if any.
+//Note: drain_queued_commands_P() must be called repeatedly to drain the commands afterwards
+void enquecommands_P(const char* pgcode)
 {
-  if(buflen < BUFSIZE)
-  {
-    //this is dangerous if a mixing of serial and this happens
-    strcpy_P(&(cmdbuffer[bufindw][0]),cmd);
-    SERIAL_ECHO_START;
-    SERIAL_ECHOPGM(MSG_Enqueing);
-    SERIAL_ECHO(cmdbuffer[bufindw]);
-    SERIAL_ECHOLNPGM("\"");
-    bufindw= (bufindw + 1)%BUFSIZE;
-    buflen += 1;
-  }
+    queued_commands_P= pgcode;
+    drain_queued_commands_P(); // first command exectuted asap (when possible)
 }
+
+//adds a single command to the main command buffer, from RAM
+//that is really done in a non-safe way.
+//needs overworking someday
+//Returns false if it failed to do so
+bool enquecommand(const char *cmd)
+{
+  if(*cmd==';')
+    return false;
+  if(buflen >= BUFSIZE)
+    return false;
+  //this is dangerous if a mixing of serial and this happens
+  strcpy(&(cmdbuffer[bufindw][0]),cmd);
+  SERIAL_ECHO_START;
+  SERIAL_ECHOPGM(MSG_Enqueing);
+  SERIAL_ECHO(cmdbuffer[bufindw]);
+  SERIAL_ECHOLNPGM("\"");
+  bufindw= (bufindw + 1)%BUFSIZE;
+  buflen += 1;
+  return true;
+}
+
+
 
 void setup_killpin()
 {
@@ -632,6 +659,15 @@ void setup()
   digitalWrite(SERVO0_PIN, LOW); // turn it off
 #endif // Z_PROBE_SLED
   setup_homepin();
+  
+#ifdef STAT_LED_RED
+  pinMode(STAT_LED_RED, OUTPUT);
+  digitalWrite(STAT_LED_RED, LOW); // turn it off
+#endif
+#ifdef STAT_LED_BLUE
+  pinMode(STAT_LED_BLUE, OUTPUT);
+  digitalWrite(STAT_LED_BLUE, LOW); // turn it off
+#endif  
 }
 
 
@@ -684,6 +720,9 @@ void loop()
 
 void get_command()
 {
+  if(drain_queued_commands_P()) // priority is given to non-serial commands
+    return;
+  
   while( MYSERIAL.available() > 0  && buflen < BUFSIZE) {
     serial_char = MYSERIAL.read();
     if(serial_char == '\n' ||
@@ -3598,16 +3637,17 @@ case 404:  //M404 Enter the nominal filament width (3mm, 1.75mm ) N<3.0> or disp
     #ifdef FILAMENTCHANGEENABLE
     case 600: //Pause for filament change X[pos] Y[pos] Z[relative lift] E[initial retract] L[later retract distance for removal]
     {
-        float target[4];
-        float lastpos[4];
-        target[X_AXIS]=current_position[X_AXIS];
-        target[Y_AXIS]=current_position[Y_AXIS];
-        target[Z_AXIS]=current_position[Z_AXIS];
-        target[E_AXIS]=current_position[E_AXIS];
-        lastpos[X_AXIS]=current_position[X_AXIS];
-        lastpos[Y_AXIS]=current_position[Y_AXIS];
-        lastpos[Z_AXIS]=current_position[Z_AXIS];
-        lastpos[E_AXIS]=current_position[E_AXIS];
+        float target[NUM_AXIS], lastpos[NUM_AXIS], fr60 = feedrate/60;
+        for (int i=0; i<NUM_AXIS; i++)
+          target[i] = lastpos[i] = current_position[i];
+
+        #define BASICPLAN plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], fr60, active_extruder);
+        #ifdef DELTA
+          #define RUNPLAN calculate_delta(target); BASICPLAN
+        #else
+          #define RUNPLAN BASICPLAN
+        #endif
+
         //retract by E
         if(code_seen('E'))
         {
@@ -3619,7 +3659,7 @@ case 404:  //M404 Enter the nominal filament width (3mm, 1.75mm ) N<3.0> or disp
             target[E_AXIS]+= FILAMENTCHANGE_FIRSTRETRACT ;
           #endif
         }
-        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder);
+        RUNPLAN;
 
         //lift Z
         if(code_seen('Z'))
@@ -3632,12 +3672,12 @@ case 404:  //M404 Enter the nominal filament width (3mm, 1.75mm ) N<3.0> or disp
             target[Z_AXIS]+= FILAMENTCHANGE_ZADD ;
           #endif
         }
-        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder);
+        RUNPLAN;
 
         //move xy
         if(code_seen('X'))
         {
-          target[X_AXIS]+= code_value();
+          target[X_AXIS]= code_value();
         }
         else
         {
@@ -3656,7 +3696,7 @@ case 404:  //M404 Enter the nominal filament width (3mm, 1.75mm ) N<3.0> or disp
           #endif
         }
 
-        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder);
+        RUNPLAN;
 
         if(code_seen('L'))
         {
@@ -3669,7 +3709,7 @@ case 404:  //M404 Enter the nominal filament width (3mm, 1.75mm ) N<3.0> or disp
           #endif
         }
 
-        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder);
+        RUNPLAN;
 
         //finish moves
         st_synchronize();
@@ -3717,10 +3757,18 @@ case 404:  //M404 Enter the nominal filament width (3mm, 1.75mm ) N<3.0> or disp
         }
         current_position[E_AXIS]=target[E_AXIS]; //the long retract of L is compensated by manual filament feeding
         plan_set_e_position(current_position[E_AXIS]);
-        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder); //should do nothing
-        plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder); //move xy back
-        plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder); //move z back
-        plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], lastpos[E_AXIS], feedrate/60, active_extruder); //final untretract
+
+        RUNPLAN; //should do nothing
+
+        #ifdef DELTA
+          calculate_delta(lastpos);
+          plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], fr60, active_extruder); //move xyz back
+          plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], lastpos[E_AXIS], fr60, active_extruder); //final untretract
+        #else
+          plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], target[Z_AXIS], target[E_AXIS], fr60, active_extruder); //move xy back
+          plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], target[E_AXIS], fr60, active_extruder); //move z back
+          plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], lastpos[E_AXIS], fr60, active_extruder); //final untretract
+        #endif
     }
     break;
     #endif //FILAMENTCHANGEENABLE
@@ -4450,7 +4498,7 @@ void manage_inactivity(bool ignore_stepper_queue/*=false*/) //default argument s
     {
        if (homeDebounceCount == 0)
        {
-          enquecommand_P((PSTR("G28")));
+          enquecommands_P((PSTR("G28")));
           homeDebounceCount++;
           LCD_ALERTMESSAGEPGM(MSG_AUTO_HOME);
        }
