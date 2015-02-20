@@ -49,7 +49,7 @@
 #define SDSS               53   // SS
 #define LED_PIN            13   // Debug LED
 #define BEEPER             42   // Speaker (A7)
-#define SDCARDDETECT       56	  // Megatronics does not use this port, External SD-Adapter
+#define SDCARDDETECT       56	// Megatronics does not use this port, External SD-Adapter
 
 // Fan
 #define FAN_PIN             6   // Fan (Objects)
@@ -79,6 +79,20 @@
 #define LCD_PINS_D5        30   // LCD 5
 #define LCD_PINS_D6        39   // LCD 6
 #define LCD_PINS_D7        15   // LCD 7
+
+// Servo support
+#ifdef NUM_SERVOS
+  #define SERVO0_PIN       46 //AUX3-6
+  #if NUM_SERVOS > 1
+    #define SERVO1_PIN     47 //AUX3-5
+    #if NUM_SERVOS > 2
+      #define SERVO2_PIN   48 //AUX3-4
+      #if NUM_SERVOS > 3
+        #define SERVO2_PIN 49 //AUX3-3
+      #endif
+    #endif
+  #endif
+#endif
 
 // Buttons are directly attached using keypad
 #define BTN_EN1            44   // Keypad encoder (2)
