@@ -109,9 +109,3 @@
 #define BLEN_C              2
 #define BLEN_B              1
 #define BLEN_A              0
-
-// Encoder rotation values
-#define encrot0             0
-#define encrot1             2
-#define encrot2             3
-#define encrot3             1
