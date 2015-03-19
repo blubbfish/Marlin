@@ -21,22 +21,18 @@
 **/
 
 #ifdef ULTIPANEL
-#define BLEN_A 0
-#define BLEN_B 1
-#define BLEN_C 2
-#define EN_A (1<<BLEN_A)
-#define EN_B (1<<BLEN_B)
-#define EN_C (1<<BLEN_C)
-#define encrot0 0
-#define encrot1 2
-#define encrot2 3
-#define encrot3 1
-#define LCD_CLICKED (buttons&EN_C)
+  #define BLEN_A 0
+  #define BLEN_B 1
+  #define BLEN_C 2
+  #define EN_A BIT(BLEN_A)
+  #define EN_B BIT(BLEN_B)
+  #define EN_C BIT(BLEN_C)
+  #define LCD_CLICKED (buttons&EN_C)
 #endif
 
 #include <U8glib.h>
 #include "DOGMbitmaps.h"
-#include "dogm_font_data_marlin.h"
+#include "dogm_font_data_ISO10646_1_Marlin.h"
 #include "ultralcd.h"
 #include "ultralcd_st7920_u8glib_rrd.h"
 
@@ -52,8 +48,7 @@
 */
 
 #define USE_BIG_EDIT_FONT                // save 3120 bytes of PROGMEM by commenting out this line
-#define FONT_STATUSMENU u8g_font_6x9
-#define FONT_MENU u8g_font_6x10_marlin
+#define FONT_MENU ISO10646_1_Marlin_5x7
 
 // DOGM parameters (size in pixels)
 #define DOG_CHAR_WIDTH         6
@@ -64,11 +59,13 @@
   #define DOG_CHAR_HEIGHT_EDIT 18
   #define LCD_WIDTH_EDIT       14
 #else
-  #define FONT_MENU_EDIT u8g_font_6x10_marlin
+  #define FONT_MENU_EDIT ISO10646_1_Marlin_5x7
   #define DOG_CHAR_WIDTH_EDIT  6
   #define DOG_CHAR_HEIGHT_EDIT 12
   #define LCD_WIDTH_EDIT       22
 #endif
+
+#define FONT_STATUSMENU FONT_MENU
 
 #define START_ROW              0
 
@@ -157,10 +154,10 @@ static void _draw_heater_status(int x, int heater) {
   bool isBed = heater < 0;
   int y = 17 + (isBed ? 1 : 0);
   u8g.setFont(FONT_STATUSMENU);
-  u8g.setPrintPos(x,6);
+  u8g.setPrintPos(x,7);
   u8g.print(itostr3(int((heater >= 0 ? degTargetHotend(heater) : degTargetBed()) + 0.5)));
   lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
-  u8g.setPrintPos(x,27);
+  u8g.setPrintPos(x,28);
   u8g.print(itostr3(int(heater >= 0 ? degHotend(heater) : degBed()) + 0.5));
   lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
   if (!isHeatingHotend(0)) {
@@ -315,7 +312,7 @@ static void lcd_implementation_drawmenu_generic(uint8_t row, const char* pstr, c
 
 static void _drawmenu_setting_edit_generic(uint8_t row, const char* pstr, char pre_char, const char* data, bool pgm) {
   char c;
-  uint8_t n = LCD_WIDTH - 2 - (pgm ? strlen_P(data) : (strlen(data)));
+  uint8_t n = LCD_WIDTH - 2 - (pgm ? lcd_strlen_P(data) : (lcd_strlen((char*)data)));
 
   lcd_implementation_mark_as_selected(row, pre_char);
 
@@ -377,18 +374,18 @@ void lcd_implementation_drawedit(const char* pstr, char* value) {
   uint8_t char_width = DOG_CHAR_WIDTH;
 
   #ifdef USE_BIG_EDIT_FONT
-    if (strlen_P(pstr) <= LCD_WIDTH_EDIT - 1) {
+    if (lcd_strlen_P(pstr) <= LCD_WIDTH_EDIT - 1) {
       u8g.setFont(FONT_MENU_EDIT);
       lcd_width = LCD_WIDTH_EDIT + 1;
       char_width = DOG_CHAR_WIDTH_EDIT;
-      if (strlen_P(pstr) >= LCD_WIDTH_EDIT - strlen(value)) rows = 2;
+      if (lcd_strlen_P(pstr) >= LCD_WIDTH_EDIT - lcd_strlen(value)) rows = 2;
     }
     else {
       u8g.setFont(FONT_MENU);
     }
   #endif
 
-  if (strlen_P(pstr) > LCD_WIDTH - 2 - strlen(value)) rows = 2;
+  if (lcd_strlen_P(pstr) > LCD_WIDTH - 2 - lcd_strlen(value)) rows = 2;
 
   const float kHalfChar = DOG_CHAR_HEIGHT_EDIT / 2;
   float rowHeight = u8g.getHeight() / (rows + 1); // 1/(rows+1) = 1/2 or 1/3
@@ -396,7 +393,7 @@ void lcd_implementation_drawedit(const char* pstr, char* value) {
   u8g.setPrintPos(0, rowHeight + kHalfChar);
   lcd_printPGM(pstr);
   u8g.print(':');
-  u8g.setPrintPos((lcd_width-1-strlen(value)) * char_width, rows * rowHeight + kHalfChar);
+  u8g.setPrintPos((lcd_width-1-lcd_strlen(value)) * char_width, rows * rowHeight + kHalfChar);
   u8g.print(value);
 }
 
