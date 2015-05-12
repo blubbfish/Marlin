@@ -30,24 +30,26 @@
 // eu       Basque-Euskera
 // kana     Japanese
 // kana_utf Japanese
+// cn       Chinese
 
 #ifndef LANGUAGE_INCLUDE
   // pick your language from the list above
   #define LANGUAGE_INCLUDE GENERATE_LANGUAGE_INCLUDE(de)
 #endif
 
+#ifdef HAS_AUTOMATIC_VERSIONING
+  #include "_Version.h"
+#endif
+
 #define PROTOCOL_VERSION "1.0"
-#define FIRMWARE_URL "https://github.com/MarlinFirmware/Marlin"
 
 #if MB(ULTIMAKER)|| MB(ULTIMAKER_OLD)|| MB(ULTIMAIN_2)
-  #undef FIRMWARE_URL
   #define MACHINE_NAME "Ultimaker"
   #define FIRMWARE_URL "http://firmware.ultimaker.com"
 #elif MB(RUMBA)
   #define MACHINE_NAME "Rumba"
 #elif MB(3DRAG)
   #define MACHINE_NAME "3Drag"
-  #undef FIRMWARE_URL
   #define FIRMWARE_URL "http://3dprint.elettronicain.it/"
 #elif MB(K8200)
   #define MACHINE_NAME "K8200"
@@ -55,23 +57,40 @@
   #define MACHINE_NAME "Makibox"
 #elif MB(SAV_MKI)
   #define MACHINE_NAME "SAV MkI"
-  #undef FIRMWARE_URL
   #define FIRMWARE_URL "https://github.com/fmalpartida/Marlin/tree/SAV-MkI-config"
 #elif MB(WITBOX)
   #define MACHINE_NAME "WITBOX"
-  #undef FIRMWARE_URL
   #define FIRMWARE_URL "http://www.bq.com/gb/downloads-witbox.html"
 #elif MB(HEPHESTOS)
   #define MACHINE_NAME "HEPHESTOS"
-  #undef FIRMWARE_URL
   #define FIRMWARE_URL "http://www.bq.com/gb/downloads-prusa-i3-hephestos.html"
-#else // Default firmware set to Mendel
-  #define MACHINE_NAME "Mendel"
+#elif MB(BRAINWAVE_PRO)
+  #define MACHINE_NAME "Kossel Pro"
+  #ifndef FIRMWARE_URL
+    #define FIRMWARE_URL "https://github.com/OpenBeamUSA/Marlin/"
+  #endif
+#else
+  #ifndef MACHINE_NAME
+    #define MACHINE_NAME "3D Printer"
+  #endif
 #endif
 
 #ifdef CUSTOM_MENDEL_NAME
+  #error CUSTOM_MENDEL_NAME deprecated - use CUSTOM_MACHINE_NAME
+  #define CUSTOM_MACHINE_NAME CUSTOM_MENDEL_NAME
+#endif
+
+#ifdef CUSTOM_MACHINE_NAME
   #undef MACHINE_NAME
-  #define MACHINE_NAME CUSTOM_MENDEL_NAME
+  #define MACHINE_NAME CUSTOM_MACHINE_NAME
+#endif
+
+#ifndef FIRMWARE_URL
+  #define FIRMWARE_URL "https://github.com/MarlinFirmware/Marlin"
+#endif
+
+#ifndef BUILD_VERSION
+  #define BUILD_VERSION "V1; Sprinter/grbl mashup for gen6"
 #endif
 
 #ifndef MACHINE_UUID
@@ -92,7 +111,7 @@
 
 // Serial Console Messages (do not translate those!)
 
-#define MSG_Enqueing                        "enqueing \""
+#define MSG_Enqueueing                      "enqueueing \""
 #define MSG_POWERUP                         "PowerUp"
 #define MSG_EXTERNAL_RESET                  " External Reset"
 #define MSG_BROWNOUT_RESET                  " Brown out Reset"
@@ -103,6 +122,7 @@
 #define MSG_FREE_MEMORY                     " Free Memory: "
 #define MSG_PLANNER_BUFFER_BYTES            "  PlannerBufferBytes: "
 #define MSG_OK                              "ok"
+#define MSG_WAIT                            "wait"
 #define MSG_FILE_SAVED                      "Done saving file."
 #define MSG_ERR_LINE_NO                     "Line Number is not Last Line Number+1, Last Line: "
 #define MSG_ERR_CHECKSUM_MISMATCH           "checksum mismatch, Last Line: "
@@ -111,26 +131,26 @@
 #define MSG_FILE_PRINTED                    "Done printing file"
 #define MSG_BEGIN_FILE_LIST                 "Begin file list"
 #define MSG_END_FILE_LIST                   "End file list"
-#define MSG_M104_INVALID_EXTRUDER           "M104 Invalid extruder "
-#define MSG_M105_INVALID_EXTRUDER           "M105 Invalid extruder "
-#define MSG_M200_INVALID_EXTRUDER           "M200 Invalid extruder "
-#define MSG_M218_INVALID_EXTRUDER           "M218 Invalid extruder "
-#define MSG_M221_INVALID_EXTRUDER           "M221 Invalid extruder "
+#define MSG_INVALID_EXTRUDER                "Invalid extruder"
+#define MSG_INVALID_SOLENOID                "Invalid solenoid"
+#define MSG_M104_INVALID_EXTRUDER           "M104 " MSG_INVALID_EXTRUDER " "
+#define MSG_M105_INVALID_EXTRUDER           "M105 " MSG_INVALID_EXTRUDER " "
+#define MSG_M109_INVALID_EXTRUDER           "M109 " MSG_INVALID_EXTRUDER " "
+#define MSG_M200_INVALID_EXTRUDER           "M200 " MSG_INVALID_EXTRUDER " "
+#define MSG_M218_INVALID_EXTRUDER           "M218 " MSG_INVALID_EXTRUDER " "
+#define MSG_M221_INVALID_EXTRUDER           "M221 " MSG_INVALID_EXTRUDER " "
 #define MSG_ERR_NO_THERMISTORS              "No thermistors - no temperature"
-#define MSG_M109_INVALID_EXTRUDER           "M109 Invalid extruder "
 #define MSG_HEATING                         "Heating..."
 #define MSG_HEATING_COMPLETE                "Heating done."
 #define MSG_BED_HEATING                     "Bed Heating."
 #define MSG_BED_DONE                        "Bed done."
-#define MSG_M115_REPORT                     "FIRMWARE_NAME:Marlin V1; Sprinter/grbl mashup for gen6 FIRMWARE_URL:" FIRMWARE_URL " PROTOCOL_VERSION:" PROTOCOL_VERSION " MACHINE_TYPE:" MACHINE_NAME " EXTRUDER_COUNT:" STRINGIFY(EXTRUDERS) " UUID:" MACHINE_UUID "\n"
+#define MSG_M115_REPORT                     "FIRMWARE_NAME:Marlin " BUILD_VERSION " FIRMWARE_URL:" FIRMWARE_URL " PROTOCOL_VERSION:" PROTOCOL_VERSION " MACHINE_TYPE:" MACHINE_NAME " EXTRUDER_COUNT:" STRINGIFY(EXTRUDERS) " UUID:" MACHINE_UUID "\n"
 #define MSG_COUNT_X                         " Count X: "
 #define MSG_ERR_KILLED                      "Printer halted. kill() called!"
 #define MSG_ERR_STOPPED                     "Printer stopped due to errors. Fix the error and use M999 to restart. (Temperature is reset. Set it after restarting)"
 #define MSG_RESEND                          "Resend: "
 #define MSG_UNKNOWN_COMMAND                 "Unknown command: \""
 #define MSG_ACTIVE_EXTRUDER                 "Active Extruder: "
-#define MSG_INVALID_EXTRUDER                "Invalid extruder"
-#define MSG_INVALID_SOLENOID                "Invalid solenoid"
 #define MSG_X_MIN                           "x_min: "
 #define MSG_X_MAX                           "x_max: "
 #define MSG_Y_MIN                           "y_min: "
@@ -138,6 +158,11 @@
 #define MSG_Z_MIN                           "z_min: "
 #define MSG_Z_MAX                           "z_max: "
 #define MSG_Z2_MAX                          "z2_max: "
+#define MSG_Z_PROBE                         "z_probe: "
+#define MSG_ERR_MATERIAL_INDEX              "M145 S<index> out of range (0-1)"
+#define MSG_ERR_M421_REQUIRES_XYZ           "M421 requires XYZ parameters"
+#define MSG_ERR_MESH_INDEX_OOB              "Mesh XY index is out of bounds"
+#define MSG_ERR_M428_TOO_FAR                "Too far from reference point"
 #define MSG_M119_REPORT                     "Reporting endstop status"
 #define MSG_ENDSTOP_HIT                     "TRIGGERED"
 #define MSG_ENDSTOP_OPEN                    "open"
@@ -190,7 +215,7 @@
 #define MSG_OK_B                            "ok B:"
 #define MSG_OK_T                            "ok T:"
 #define MSG_AT                              " @:"
-#define MSG_PID_AUTOTUNE_FINISHED           MSG_PID_AUTOTUNE " finished! Put the last Kp, Ki and Kd constants from above into Configuration.h"
+#define MSG_PID_AUTOTUNE_FINISHED           MSG_PID_AUTOTUNE " finished! Put the last Kp, Ki and Kd constants from below into Configuration.h"
 #define MSG_PID_DEBUG                       " PID_DEBUG "
 #define MSG_PID_DEBUG_INPUT                 ": Input "
 #define MSG_PID_DEBUG_OUTPUT                " Output "

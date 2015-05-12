@@ -80,6 +80,10 @@
 #define LCD_PINS_D6        39   // LCD 6
 #define LCD_PINS_D7        15   // LCD 7
 
+#ifdef Z_PROBE_SLED
+  #define SLED_PIN         -1
+#endif
+
 // Servo support
 #ifdef NUM_SERVOS
   #define SERVO0_PIN       46 //AUX3-6

@@ -22,6 +22,10 @@
   #endif
 #endif
 
+#ifdef Z_PROBE_SLED
+  #define SLED_PIN         -1
+#endif
+
 #undef X_MS1_PIN
 #undef X_MS2_PIN
 #undef Y_MS1_PIN
@@ -159,6 +163,26 @@
   #endif // !NEWPANEL
 
 #endif // ULTRA_LCD
+
+#if defined(VIKI2) || defined(miniVIKI)
+ #define BEEPER 44
+ // Pins for DOGM SPI LCD Support
+ #define DOGLCD_A0  70 
+ #define DOGLCD_CS  71 
+ #define LCD_SCREEN_ROT_180
+  
+ //The encoder and click button 
+ #define BTN_EN1 85 
+ #define BTN_EN2 84
+ #define BTN_ENC 83  //the click switch
+
+ #define SDCARDDETECT -1 // Pin 72 if using easy adapter board   
+
+  #ifdef TEMP_STAT_LEDS
+   #define STAT_LED_RED      22
+   #define STAT_LED_BLUE     32 
+  #endif
+#endif // VIKI2/miniVIKI
 
 #ifdef FILAMENT_SENSOR
   //Filip added pin for Filament sensor analog input 
