@@ -23,9 +23,9 @@
 
   /**
    * Whenever an M104 or M109 increases the target temperature the firmware will wait for the
-   * WATCH_TEMP_PERIOD to transpire, and if the temperature hasn't increased by WATCH_TEMP_INCREASE
+   * WATCH_TEMP_PERIOD to expire, and if the temperature hasn't increased by WATCH_TEMP_INCREASE
    * degrees, the machine is halted, requiring a hard reset. This test restarts with any M104/M109,
-   * but only if the current temperature is below the target by at least 2 * WATCH_TEMP_INCREASE degrees.
+   * but only if the current temperature is far enough below the target for a reliable test.
    */
   #define WATCH_TEMP_PERIOD 16                // Seconds
   #define WATCH_TEMP_INCREASE 4               // Degrees Celsius
@@ -102,6 +102,11 @@
 // before setting a PWM value. (Does not work with software PWM for fan on Sanguinololu)
 //#define FAN_KICKSTART_TIME 100
 
+// This defines the minimal speed for the main fan, run in PWM mode
+// to enable uncomment and set minimal PWM speed for reliable running (1-255)
+// if fan speed is [1 - (FAN_MIN_PWM-1)] it is set to FAN_MIN_PWM
+#define FAN_MIN_PWM 50 // K8200: fan stops running at about 35 to 40 (of 255)
+
 // @section extruder
 
 // Extruder cooling fans
@@ -147,12 +152,13 @@
   // Play a little bit with small adjustments (0.5mm) and check the behaviour.
   // The M119 (endstops report) will start reporting the Z2 Endstop as well.
 
-  #define Z_DUAL_ENDSTOPS
+  #define Z2_STEP_PIN E2_STEP_PIN           // Stepper to be used to Z2 axis.
+  #define Z2_DIR_PIN E2_DIR_PIN
+  #define Z2_ENABLE_PIN E2_ENABLE_PIN
+
+  // #define Z_DUAL_ENDSTOPS
 
   #ifdef Z_DUAL_ENDSTOPS
-    #define Z2_STEP_PIN E2_STEP_PIN           // Stepper to be used to Z2 axis.
-    #define Z2_DIR_PIN E2_DIR_PIN
-    #define Z2_ENABLE_PIN E2_ENABLE_PIN
     #define Z2_MAX_PIN 36                     //Endstop used for Z2 axis. In this case I'm using XMAX in a Rumba Board (pin 36)
     const bool Z2_MAX_ENDSTOP_INVERTING = false;
     #define DISABLE_XMAX_ENDSTOP              //Better to disable the XMAX to avoid conflict. Just rename "XMAX_ENDSTOP" by the endstop you are using for Z2 axis.
@@ -321,7 +327,22 @@
     //#define PROGRESS_MSG_ONCE
   #endif
 
+  // This allows hosts to request long names for files and folders with M33
+  //#define LONG_FILENAME_HOST_SUPPORT
+
 #endif // SDSUPPORT
+
+// for dogm lcd displays you can choose some additional fonts:
+#ifdef DOGLCD
+  // save 3120 bytes of PROGMEM by commenting out #define USE_BIG_EDIT_FONT
+  // we don't have a big font for Cyrillic, Kana
+  //#define USE_BIG_EDIT_FONT
+ 
+  // If you have spare 2300Byte of progmem and want to use a 
+  // smaller font on the Info-screen uncomment the next line.
+  //#define USE_SMALL_INFOFONT
+#endif // DOGLCD
+
 
 // @section more
 
@@ -401,12 +422,13 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 #define BUFSIZE 4
 
 // Bad Serial-connections can miss a received command by sending an 'ok'
-// Therefore some clients go after 30 seconds in a timeout. Some other clients start sending commands while receiving a 'wait'.
-// This wait is only send when the buffer is empty. The timeout-length is in milliseconds. 1000 is a good value.
-#define NO_TIMEOUTS 1000
+// Therefore some clients abort after 30 seconds in a timeout.
+// Some other clients start sending commands while receiving a 'wait'.
+// This "wait" is only sent when the buffer is empty. 1 second is a good value here.
+//#define NO_TIMEOUTS 1000 // Milliseconds
 
 // Some clients will have this feature soon. This could make the NO_TIMEOUTS unnecessary.
-#define ADVANCED_OK
+//#define ADVANCED_OK
 
 // @section fwretract
 
